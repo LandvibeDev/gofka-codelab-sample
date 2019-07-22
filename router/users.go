@@ -4,31 +4,25 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/LandvibeDev/gofka-codelab-sample/model"
 	"github.com/labstack/echo"
-	"go.mongodb.org/mongo-driver/bson"
 )
-
-type User struct {
-	ID    string `json:"id" form:"id" query:"id"`
-	Name  string `json:"name" form:"name" query:"name"`
-	Email string `json:"email" form:"email" query:"email"`
-}
 
 // e.POST("/users", SaveUser)
 func (h *Handler) SaveUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	u := new(User)
+	u := new(model.User)
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	insertResult, err := h.userCollection.InsertOne(ctx, u)
+	user, err := h.userService.Create(&ctx, u)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Inserted a single documents: ", insertResult.InsertedID)
+	fmt.Println("Inserted a single documents: ", user)
 	return c.JSON(http.StatusCreated, u)
 }
 
@@ -39,12 +33,11 @@ func (h *Handler) GetUser(c echo.Context) error {
 	// User ID from path `users/:id`
 	id := c.Param("id")
 
-	var user User
-	if err := h.userCollection.FindOne(ctx, bson.D{{"id", id}}).Decode(&user); err != nil {
-		fmt.Println(id+" not exist: ", err)
+	user, err := h.userService.GetByID(&ctx, id)
+	if err != nil {
 		return c.String(http.StatusNotFound, id+" not exist")
-	}
 
+	}
 	return c.JSON(http.StatusOK, user)
 }
 
@@ -54,21 +47,22 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 	// User ID from path `users/:id`
 	id := c.Param("id")
 
-	u := new(User)
+	u := new(model.User)
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	updatedResult, err := h.userCollection.ReplaceOne(ctx, bson.D{{"id", id}}, u)
-	if err != nil || updatedResult == nil {
-		return err
-	}
-
-	if updatedResult.MatchedCount == 0 {
+	if _, err := h.userService.GetByID(&ctx, id); err != nil {
 		return c.String(http.StatusNotFound, id+" not exist")
 	}
 
-	fmt.Println("Updated a single documents: ", updatedResult.UpsertedID)
+	user, err := h.userService.Update(&ctx, u)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Updated a single documents: ", user)
 	return c.JSON(http.StatusOK, u)
 }
 
@@ -79,11 +73,14 @@ func (h *Handler) DeleteUser(c echo.Context) error {
 	// User ID from path `users/:id`
 	id := c.Param("id")
 
-	deletedResult, err := h.userCollection.DeleteOne(ctx, bson.D{{"id", id}})
-	if err != nil {
+	if _, err := h.userService.GetByID(&ctx, id); err != nil {
+		return c.String(http.StatusNotFound, id+" not exist")
+	}
+
+	if err := h.userService.Delete(&ctx, id); err != nil {
 		return err
 	}
 
-	fmt.Println("Deleted documents count: ", deletedResult.DeletedCount)
+	fmt.Println("Deleted document id: ", id)
 	return c.String(http.StatusNoContent, id+" is deleted")
 }

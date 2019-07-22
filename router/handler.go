@@ -1,13 +1,15 @@
 package router
 
-import "go.mongodb.org/mongo-driver/mongo"
+import (
+	"github.com/LandvibeDev/gofka-codelab-sample/service"
+)
 
 type Handler struct {
-	userCollection *mongo.Collection
+	userService service.UserServiceInterface
 }
 
-func NewHandler(c *mongo.Collection) *Handler {
+func NewHandler(u service.UserServiceInterface) *Handler {
 	return &Handler{
-		userCollection: c,
+		userService: u,
 	}
 }
