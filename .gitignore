@@ -103,3 +103,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/go,linux,macos,windows,visualstudiocode
+/.idea
