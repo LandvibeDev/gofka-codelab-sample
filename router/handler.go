@@ -6,10 +6,12 @@ import (
 
 type Handler struct {
 	userService service.UserServiceInterface
+	logService  service.LogServiceInterface
 }
 
-func NewHandler(u service.UserServiceInterface) *Handler {
+func NewHandler(u service.UserServiceInterface, l service.LogServiceInterface) *Handler {
 	return &Handler{
 		userService: u,
+		logService:  l,
 	}
 }

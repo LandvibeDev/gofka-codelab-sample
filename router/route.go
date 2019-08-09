@@ -8,4 +8,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	user.GET("/:id", h.GetUser)
 	user.PUT("/:id", h.UpdateUser)
 	user.DELETE("/:id", h.DeleteUser)
+
+	log := v1.Group("/logs")
+	log.POST("", h.WriteLogs)
 }
