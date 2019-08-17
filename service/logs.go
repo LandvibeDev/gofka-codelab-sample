@@ -44,3 +44,5 @@ func (ls *LogService) Send(topic string, msg message.LogMessage) error {
 		return nil
 	}
 }
+
+// TODO add bulk send

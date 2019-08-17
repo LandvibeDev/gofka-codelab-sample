@@ -3,34 +3,16 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/LandvibeDev/gofka-codelab-sample/config"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"time"
 )
 
-type KafkaConfig struct {
-	Hosts string
-}
-
-type KafkaConsumerConfig struct {
-	KafkaConfig
-	Topic            string
-	GroupId          string
-	MaxPeek          int
-	SessionTimeoutMs time.Duration
-	AutoOffsetReset  kafka.Offset
-}
-
-type KafkaTopicConfig struct {
-	Topic             string
-	NumPartitions     int
-	ReplicationFactor int
-}
-
-func GetProducer(kafkaConfig KafkaConfig) (*ProducerConnector, error) {
+func GetProducer(kafkaConfig config.KafkaConfiguration) (*ProducerConnector, error) {
 	return NewProducerConnector(kafkaConfig)
 }
 
-func EnsureTopic(topicConfig KafkaTopicConfig, kafkaConfig KafkaConfig) ([]kafka.TopicResult, error) {
+func EnsureTopic(kafkaConfig config.KafkaConfiguration) ([]kafka.TopicResult, error) {
 	admin, err := kafka.NewAdminClient(&kafka.ConfigMap{"bootstrap.servers": kafkaConfig.Hosts})
 	if err != nil {
 		return nil, err
@@ -48,14 +30,14 @@ func EnsureTopic(topicConfig KafkaTopicConfig, kafkaConfig KafkaConfig) ([]kafka
 	results, err := admin.CreateTopics(
 		ctx,
 		[]kafka.TopicSpecification{{
-			Topic:             topicConfig.Topic,
-			NumPartitions:     topicConfig.NumPartitions,
-			ReplicationFactor: topicConfig.ReplicationFactor}},
+			Topic:             kafkaConfig.Topic.Name,
+			NumPartitions:     kafkaConfig.Topic.NumPartitions,
+			ReplicationFactor: kafkaConfig.Topic.ReplicationFactor}},
 		kafka.SetAdminOperationTimeout(timeout),
 	)
 
 	if err != nil {
-		fmt.Printf("Failed to create topic: $d\n", topicConfig.Topic, err)
+		fmt.Printf("Failed to create topic: $d\n", kafkaConfig.Topic.Name, err)
 		return nil, err
 	}
 

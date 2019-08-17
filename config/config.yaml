@@ -1,0 +1,17 @@
+kafka:
+  hosts: 172.17.0.1:9093
+  consumer:
+    topic: log
+    groupid: worker
+    session-timeout-ms: 6000
+    auto-offset-reset: earliest
+  topic:
+    name: log
+    num-partitions: 1
+    replication-factor: 1
+
+mongodb:
+  hosts: 172.17.0.1:27017
+
+server:
+  port: 8080

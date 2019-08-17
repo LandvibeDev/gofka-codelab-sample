@@ -1,11 +1,12 @@
 package kafka
 
 import (
+	"github.com/LandvibeDev/gofka-codelab-sample/config"
 	. "github.com/LandvibeDev/gofka-codelab-sample/kafka/message"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
-func NewProducerConnector(kafkaConfig KafkaConfig) (*ProducerConnector, error) {
+func NewProducerConnector(kafkaConfig config.KafkaConfiguration) (*ProducerConnector, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": kafkaConfig.Hosts})
 	if err != nil {
 		return nil, err

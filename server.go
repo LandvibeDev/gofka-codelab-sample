@@ -1,15 +1,22 @@
 package main
 
 import (
+	"fmt"
+	"github.com/LandvibeDev/gofka-codelab-sample/config"
 	"github.com/LandvibeDev/gofka-codelab-sample/db"
 	"github.com/LandvibeDev/gofka-codelab-sample/kafka"
 	"github.com/LandvibeDev/gofka-codelab-sample/router"
 	"github.com/LandvibeDev/gofka-codelab-sample/service"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"runtime"
 )
 
 func main() {
+	// Use multi core
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
+
 	// Echo instance
 	e := echo.New()
 
@@ -17,21 +24,22 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	// Load Configuration
+	gofkaConfig := config.LoadConfiguration(e.Logger)
+
 	// Connect DB
-	client, err := db.New()
+	client, err := db.New(gofkaConfig.MongoDb)
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 
 	// Connect Kafka
-	kafkaConfig := kafka.KafkaConfig{Hosts: "172.17.0.1:9093"}
-	topicConfig := kafka.KafkaTopicConfig{Topic: service.LogTopic, NumPartitions: 1, ReplicationFactor: 1}
-	_, err = kafka.EnsureTopic(topicConfig, kafkaConfig)
+	_, err = kafka.EnsureTopic(gofkaConfig.Kafka)
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 
-	producer, err := kafka.GetProducer(kafkaConfig)
+	producer, err := kafka.GetProducer(gofkaConfig.Kafka)
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
@@ -45,6 +53,14 @@ func main() {
 	v1 := e.Group("/api/v1")
 	h := router.NewHandler(userService, logService)
 	h.Register(v1)
+
+	// Create Consumer
+	consumer, err := kafka.NewConsumerConnector(gofkaConfig.Kafka)
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
+
+	go consumer.StartPeek()
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
